@@ -37,6 +37,14 @@ void system_init(void) {
      * frames in memory. The frame table will be useful later if we need to
      * evict pages during page faults.
      */
+    frame_table = (fte_t *) mem + (0 * PAGE_SIZE);
+    for (int i = 0; i < NUM_FRAMES; i++) {
+        frame_table[i].mapped = 0;
+        frame_table[i].process = NULL;
+        frame_table[i].protected = 0;
+        frame_table[i].referenced = 0;
+        frame_table[i].vpn = 0;
+    }
 
 
     /*
@@ -46,6 +54,7 @@ void system_init(void) {
      * however, there are some frames we never want to evict.
      * We mark these special pages as "protected" to indicate this.
      */
+    frame_table[0].protected = 1;
 
 }
 
