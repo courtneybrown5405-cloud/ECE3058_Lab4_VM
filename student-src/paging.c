@@ -38,13 +38,7 @@ void system_init(void) {
      * evict pages during page faults.
      */
     frame_table = (fte_t *) mem + (0 * PAGE_SIZE);
-    for (int i = 0; i < NUM_FRAMES; i++) {
-        frame_table[i].mapped = 0;
-        frame_table[i].process = NULL;
-        frame_table[i].protected = 0;
-        frame_table[i].referenced = 0;
-        frame_table[i].vpn = 0;
-    }
+    memset(frame_table, 0, NUM_FRAMES * sizeof(fte_t));
 
 
     /*
@@ -77,7 +71,8 @@ void proc_init(pcb_t *proc) {
      * 1. Call the free frame allocator (free_frame) to return a free frame for
      * this process's page table. You should zero-out the memory.
      */
-
+    pfn_t pfn = free_frame();
+    memset(mem + (pfn * PAGE_SIZE), 0, PAGE_SIZE);
 
     /*
      * 2. Update the process's PCB with the frame number
@@ -86,6 +81,8 @@ void proc_init(pcb_t *proc) {
      * Additionally, mark the frame's frame table entry as protected. You do not
      * want your page table to be accidentally evicted.
      */
+    proc->saved_ptbr = pfn;
+    frame_table[pfn].protected = 1;
 
 }
 
