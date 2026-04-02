@@ -98,7 +98,10 @@ void proc_init(pcb_t *proc) {
     -----------------------------------------------------------------------------------
  */
 void context_switch(pcb_t *proc) {
-
+    current_process->saved_ptbr = PTBR;
+    PTBR =  proc->saved_ptbr;
+    current_process = proc; 
+    
 }
 
 /*  --------------------------------- PROBLEM 5 --------------------------------------
