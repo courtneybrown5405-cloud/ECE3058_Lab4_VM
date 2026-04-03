@@ -139,18 +139,28 @@ uint8_t mem_access(vaddr_t address, char rw, uint8_t data) {
     /* Split the address and find the page table entry */
 
     //Use the page splitting functions to get the VPN and the offset.
+    vpn_t va_vpn = vaddr_vpn(address);
+    uint16_t offset = vaddr_offset(address);
+
     //calculate the PT Index = PTBR + VPN << sizeof(pte struct)
-    //go to phys memory at the address 
-    //get pte
+    uint32_t pte_addr = PTBR + va_vpn * sizeof(pte_t);
+
+    //go to phys memory at the address and get pte
+    pte_t *pte = (pte_t *)(mem + pte_addr);
 
     /* If an entry is invalid, just page fault to allocate a page for the page table. */
 
     //check for validity using the struct validity field
     //if it is invalid, call the page_fault (vaddr)
+    if(!pte->valid) {
+        page_fault(address);
+    }
+
 
     /* Set the "referenced" bit to reduce the page's likelihood of eviction */
-    
+    pfn_t pte_pfn = pte->pfn;
     //use the pfn to find the corresponding frame table and set its referenced bit to 1. 
+    frame_table[pte_pfn].referenced = 1;
 
 
     /*
@@ -165,14 +175,19 @@ uint8_t mem_access(vaddr_t address, char rw, uint8_t data) {
         table entry.
     */
     //combine the pfn and offset to get the physical address
+    uint32_t phys_addr = (pte_pfn << OFFSET_LEN) | offset;
 
-
+    stats.accesses++;
     /* Either read or write the data to the physical address
        depending on 'rw' */
     if (rw == 'r') {
-        //if it is a read return the data
+        stats.reads++;
+        return mem[phys_addr];
     } else {
-        // if it is a write, write the data passed into the function and return
+        mem[phys_addr] = data;
+        pte->dirty = 1;
+        stats.writes++;
+        return mem[phys_addr];
     }
 }
 
