@@ -138,11 +138,19 @@ uint8_t mem_access(vaddr_t address, char rw, uint8_t data) {
 
     /* Split the address and find the page table entry */
 
+    //Use the page splitting functions to get the VPN and the offset.
+    //calculate the PT Index = PTBR + VPN << sizeof(pte struct)
+    //go to phys memory at the address 
+    //get pte
 
     /* If an entry is invalid, just page fault to allocate a page for the page table. */
 
+    //check for validity using the struct validity field
+    //if it is invalid, call the page_fault (vaddr)
 
     /* Set the "referenced" bit to reduce the page's likelihood of eviction */
+    
+    //use the pfn to find the corresponding frame table and set its referenced bit to 1. 
 
 
     /*
@@ -156,14 +164,15 @@ uint8_t mem_access(vaddr_t address, char rw, uint8_t data) {
         Create the physical address using your offset and the page
         table entry.
     */
+    //combine the pfn and offset to get the physical address
 
 
     /* Either read or write the data to the physical address
        depending on 'rw' */
     if (rw == 'r') {
-
+        //if it is a read return the data
     } else {
-
+        // if it is a write, write the data passed into the function and return
     }
 }
 
