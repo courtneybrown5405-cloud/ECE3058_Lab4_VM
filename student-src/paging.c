@@ -205,12 +205,40 @@ uint8_t mem_access(vaddr_t address, char rw, uint8_t data) {
 */
 void proc_cleanup(pcb_t *proc) {
     /* Look up the process's page table */
+    pte_t *proc_pte = (pte_t *) (mem + (proc->saved_ptbr * PAGE_SIZE)); 
 
     /* Iterate the page table and clean up each valid page */
     for (size_t i = 0; i < NUM_PAGES; i++) {
+        if(proc_pte[i].valid) {
+            pfn_t proc_pfn = proc_pte[i].pfn;
 
+            if (proc_pte[i].dirty) {
+                uint8_t *frame = mem + (proc_pte[i].pfn * PAGE_SIZE);
+                swap_write(&proc_pte[i], frame);
+            }
+
+            if (swap_exists(&proc_pte[i])) {
+                swap_free(&proc_pte[i]);
+            }
+
+            frame_table[proc_pfn].protected = 0;
+            frame_table[proc_pfn].mapped = 0;
+            frame_table[proc_pfn].referenced = 0;
+            frame_table[proc_pfn].process = NULL;
+            frame_table[proc_pfn].vpn = 0;
+
+            proc_pte[i].dirty = 0;
+            proc_pte[i].pfn = 0;
+            proc_pte[i].valid = 0;
+        }
+ 
     }
 
     /* Free the page table itself in the frame table */
+    frame_table[proc->saved_ptbr].protected = 0;
+    frame_table[proc->saved_ptbr].mapped = 0;
+    frame_table[proc->saved_ptbr].referenced = 0;
+    frame_table[proc->saved_ptbr].process = NULL;
+    frame_table[proc->saved_ptbr].vpn = 0;
 
 }
