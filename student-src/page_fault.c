@@ -28,7 +28,6 @@ void page_fault(vaddr_t address) {
     /* First, split the faulting address and locate the page table entry */
 
     vpn_t vpn = vaddr_vpn(address);
-    uint16_t offset = vaddr_offset(address);
 
     uint32_t pte_addr = PTBR + vpn * sizeof(pte_t);
     pte_t *pte = (pte_t *)(mem + pte_addr);
