@@ -28,6 +28,7 @@ pfn_t free_frame(void) {
        mapping. */
     victim_pfn = select_victim_frame();
 
+
     /*
      * If victim frame is currently mapped:
      *
@@ -37,7 +38,26 @@ pfn_t free_frame(void) {
      */
 
     /* If the victim is in use, we must evict it first */
+    if (frame_table[victim_pfn].mapped) {
+        pcb_t *victim_process = frame_table[victim_pfn].process;
 
+        uint32_t victim_ptaddr = victim_process->saved_ptbr + (frame_table[victim_pfn].vpn * sizeof(pte_t));
+        pte_t *victim_pte = (pte_t *)(mem + victim_ptaddr);
+        uint8_t *victim_frame = mem + (victim_pfn * PAGE_SIZE);
+
+        if (victim_pte->dirty){
+            swap_write(victim_pte, victim_frame);
+            stats.writebacks++;
+        }
+        victim_pte->valid = 0;
+        victim_pte->dirty = 0;
+    }
+
+    //Clearing previous frame table referenced bits
+    frame_table[victim_pfn].mapped = 0;
+    frame_table[victim_pfn].referenced = 0;
+    frame_table[victim_pfn].process = NULL;
+    frame_table[victim_pfn].vpn = 0;
 
     /* Return the pfn */
     return victim_pfn;

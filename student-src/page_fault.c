@@ -62,7 +62,7 @@ void page_fault(vaddr_t address) {
      * Otherwise, zero the page's memory. If the page is later written
      * back, swap_write() will automatically allocate a swap entry.
      */
-    uint8_t *pte_frame = (fte_t *)(mem + (pfn * PAGE_SIZE));
+    uint8_t *pte_frame = mem + (pfn * PAGE_SIZE);
     if (swap_exists(pte)) {
       swap_read(pte, pte_frame);
       stats.reads++;
