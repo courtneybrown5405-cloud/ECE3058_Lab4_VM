@@ -37,7 +37,7 @@ void system_init(void) {
      * frames in memory. The frame table will be useful later if we need to
      * evict pages during page faults.
      */
-    frame_table = (fte_t *) mem + (0 * PAGE_SIZE);
+    frame_table = (fte_t *) (mem + (0 * PAGE_SIZE));
     memset(frame_table, 0, NUM_FRAMES * sizeof(fte_t));
 
 
@@ -98,7 +98,9 @@ void proc_init(pcb_t *proc) {
     -----------------------------------------------------------------------------------
  */
 void context_switch(pcb_t *proc) {
-    current_process->saved_ptbr = PTBR;
+    if (current_process != NULL) {
+         current_process->saved_ptbr = PTBR;
+    }
     PTBR =  proc->saved_ptbr;
     current_process = proc; 
     
@@ -143,10 +145,8 @@ uint8_t mem_access(vaddr_t address, char rw, uint8_t data) {
     uint16_t offset = vaddr_offset(address);
 
     //calculate the PT Index = PTBR + VPN << sizeof(pte struct)
-    uint32_t pte_addr = PTBR + va_vpn * sizeof(pte_t);
-
     //go to phys memory at the address and get pte
-    pte_t *pte = (pte_t *)(mem + pte_addr);
+    pte_t *pte = (pte_t *)(mem + PTBR * PAGE_SIZE) + va_vpn;
 
     /* If an entry is invalid, just page fault to allocate a page for the page table. */
 
@@ -158,9 +158,8 @@ uint8_t mem_access(vaddr_t address, char rw, uint8_t data) {
 
 
     /* Set the "referenced" bit to reduce the page's likelihood of eviction */
-    pfn_t pte_pfn = pte->pfn;
     //use the pfn to find the corresponding frame table and set its referenced bit to 1. 
-    frame_table[pte_pfn].referenced = 1;
+    frame_table[pte->pfn].referenced = 1;
 
 
     /*
@@ -175,7 +174,7 @@ uint8_t mem_access(vaddr_t address, char rw, uint8_t data) {
         table entry.
     */
     //combine the pfn and offset to get the physical address
-    uint32_t phys_addr = (pte_pfn << OFFSET_LEN) | offset;
+    uint32_t phys_addr = (pte->pfn << OFFSET_LEN) | offset;
 
     stats.accesses++;
     /* Either read or write the data to the physical address
@@ -211,11 +210,6 @@ void proc_cleanup(pcb_t *proc) {
     for (size_t i = 0; i < NUM_PAGES; i++) {
         if(proc_pte[i].valid) {
             pfn_t proc_pfn = proc_pte[i].pfn;
-
-            if (proc_pte[i].dirty) {
-                uint8_t *frame = mem + (proc_pte[i].pfn * PAGE_SIZE);
-                swap_write(&proc_pte[i], frame);
-            }
 
             if (swap_exists(&proc_pte[i])) {
                 swap_free(&proc_pte[i]);

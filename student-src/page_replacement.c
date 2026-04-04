@@ -40,9 +40,7 @@ pfn_t free_frame(void) {
     /* If the victim is in use, we must evict it first */
     if (frame_table[victim_pfn].mapped) {
         pcb_t *victim_process = frame_table[victim_pfn].process;
-
-        uint32_t victim_ptaddr = victim_process->saved_ptbr + (frame_table[victim_pfn].vpn * sizeof(pte_t));
-        pte_t *victim_pte = (pte_t *)(mem + victim_ptaddr);
+        pte_t *victim_pte = (pte_t *)(mem + victim_process->saved_ptbr * PAGE_SIZE) + frame_table[victim_pfn].vpn;
         uint8_t *victim_frame = mem + (victim_pfn * PAGE_SIZE);
 
         if (victim_pte->dirty){

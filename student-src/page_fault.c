@@ -29,12 +29,11 @@ void page_fault(vaddr_t address) {
 
     vpn_t vpn = vaddr_vpn(address);
 
-    uint32_t pte_addr = PTBR + vpn * sizeof(pte_t);
-    pte_t *pte = (pte_t *)(mem + pte_addr);
+    pte_t *pte = (pte_t *)(mem + PTBR * PAGE_SIZE) + vpn;
 
     /* It's a page fault, so the entry obviously won't be valid. Grab
        a frame to use by calling free_frame(). */
-      pfn_t pfn = free_frame();
+    pfn_t pfn = free_frame();
 
 
     /* Update the page table entry. Make sure you set any relevant bits. */
@@ -64,11 +63,9 @@ void page_fault(vaddr_t address) {
     uint8_t *pte_frame = mem + (pfn * PAGE_SIZE);
     if (swap_exists(pte)) {
       swap_read(pte, pte_frame);
-      stats.reads++;
     } else {
       memset(pte_frame, 0, PAGE_SIZE);
     }
-    stats.accesses++;
     stats.page_faults++;
 
 }
